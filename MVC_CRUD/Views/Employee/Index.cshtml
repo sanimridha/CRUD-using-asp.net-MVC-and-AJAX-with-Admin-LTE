@@ -1,0 +1,124 @@
+﻿
+@{
+    ViewBag.Title = "Employee List";
+}
+
+<h2>Employee CRUD Operations</h2>
+<a class="btn btn-success" style="margin-bottom:10px" onclick="PopupForm('@Url.Action("AddOrEdit","Employee")')"><i class="fas fa-plus"></i> Add New</a>
+<table id="employeeTable" class="table table-striped table-bordered" style="weidh:100%">
+    <thead>
+        <tr>
+            <td>Name</td>
+            <td>Position</td>
+            <td>Office</td>
+            <td>Age</td>
+            <td>Salary</td>
+            <td> </td>
+        </tr>
+    </thead>
+</table>
+
+<link href="//cdn.datatables.net/1.10.21/css/jquery.dataTables.min.css" rel="stylesheet" />
+<link href="https://cdn.datatables.net/1.10.21/css/dataTables.bootstrap4.min.css" rel="stylesheet" />
+<link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" />
+
+@section scripts{
+    <script src="//cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.21/js/dataTables.bootstrap4.min.js"></script>
+
+    <script>
+        var Popup, dataTable;
+        dataTable = $(document).ready(function () {
+            $("#employeeTable").DataTable({
+                "ajax": {
+                    "url": "/Employee/GetData",         /*employee Controler GetData Method*/
+                    "type": "GET",
+                    "datatype": "json"
+                },
+                "columns": [
+                    { "data": "Name" },
+                    { "data": "Position" },
+                    { "data": "Office" },
+                    { "data": "Age" },
+                    { "data": "Salary" },
+                    {
+                        "data": "EmployeeID", "render": function (data) {
+                            return "<a class='btn btn-outline-info btn-sm' onclick=PopupForm('@Url.Action("AddOrEdit","Employee")/" + data + "')><i class='fa fa-pencil'></i> Edit</a><a class='btn btn-outline-danger btn-sm' style='margin-left:5px' onclick=Delete(" + data + ")><i class='fa fa-trash'></i> Delete</a>"
+                        },
+                        "orderable": false,
+                        "searchable":false,
+                        "width": "150px"
+                    }
+                ],
+                "language": {
+                    "emptyTable": "No Data Available, Please click on <b>Add New</b> Button"
+                }
+
+            });
+        });
+        function PopupForm(url) {
+            var formDiv = $('<div/>');
+            $.get(url)
+                .done(function (response) {
+                    formDiv.html(response);
+
+                    Popup = formDiv.dialog({
+                        autoOpen: true,
+                        resizable: false,
+                        title: 'Fill Employee Details',
+                        height: 550,
+                        width: 700,
+                        close: function () {
+                            Popup.dialog('destroy').remove();
+                        }
+
+                    });
+                });
+        }
+
+        function SubmitForm(form) {
+            $.validator.unobtrusive.parse(form);
+            if ($(form).valid()) {
+                $.ajax({
+                    type: "POST",
+                    url: form.action,
+                    data: $(form).serialize(),
+                    success: function (data) {
+                        if (data.success) {
+                            Popup.dialog('close');
+                            $('#employeeTable').DataTable().ajax.reload();
+
+                            $.notify(data.message, {
+                                globalPosition: "top center",
+                                className: "success"
+                            })
+
+                        }
+                    }
+                });
+            }
+            return false;
+        }
+        function Delete(id) {
+            if (confirm('Are You Sure to Delete This Employee Record ?')) {
+                $.ajax({
+                    type: "POST",
+                    url: '@Url.Action("Delete","Employee")/' + id,
+                    success: function (data) {
+                        if (data.success) {
+                            $('#employeeTable').DataTable().ajax.reload();
+
+                            $.notify(data.message, {
+                                globalPosition: "top center",
+                                className: "success"
+                            })
+
+                        }
+                    }
+                    
+                })
+            }
+        }
+    </script>
+}
+
